@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>멀티플레이어 체스 게임</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%233a5a40' d='M17.5,13.5A1.5,1.5 0 0,1 19,15A1.5,1.5 0 0,1 17.5,16.5A1.5,1.5 0 0,1 16,15A1.5,1.5 0 0,1 17.5,13.5M6.5,13.5A1.5,1.5 0 0,1 8,15A1.5,1.5 0 0,1 6.5,16.5A1.5,1.5 0 0,1 5,15A1.5,1.5 0 0,1 6.5,13.5M12,3C12.81,3 13.5,3.69 13.5,4.5V6H10.5V4.5C10.5,3.69 11.19,3 12,3M19,5C19.83,5 20.5,5.67 20.5,6.5C20.5,7.33 19.83,8 19,8H18V10.63C18,12.5 16.5,14 14.63,14H9.33C7.5,14 6,12.5 6,10.63V8H5C4.17,8 3.5,7.33 3.5,6.5C3.5,5.67 4.17,5 5,5H19M8.33,15.5C9.44,15.5 10.33,16.39 10.33,17.5C10.33,18.61 9.44,19.5 8.33,19.5C7.22,19.5 6.33,18.61 6.33,17.5C6.33,16.39 7.22,15.5 8.33,15.5M15.66,15.5C16.77,15.5 17.66,16.39 17.66,17.5C17.66,18.61 16.77,19.5 15.66,19.5C14.55,19.5 13.66,18.61 13.66,17.5C13.66,16.39 14.55,15.5 15.66,15.5M12,15.5C13.11,15.5 14,16.39 14,17.5C14,18.61 13.11,19.5 12,19.5C10.89,19.5 10,18.61 10,17.5C10,16.39 10.89,15.5 12,15.5Z'/%3E%3C/svg%3E" type="image/svg+xml">
+    <meta name="description" content="웹 기반 멀티플레이어 체스 게임 - 온라인으로 친구와 함께 체스를 즐겨보세요.">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="lobby" class="lobby-container">
+        <header>
+            <h1><i class="fas fa-chess"></i> 멀티플레이어 체스</h1>
+        </header>
+        
+        <div class="lobby-content">
+            <div class="create-room">
+                <h2>방 만들기</h2>
+                <div class="input-group">
+                    <input type="text" id="room-name" placeholder="방 이름을 입력하세요">
+                    <button id="create-room-btn">방 만들기</button>
+                </div>
+            </div>
+            
+            <div class="join-room">
+                <h2>방 참가하기</h2>
+                <div class="room-list-container">
+                    <div class="room-list-header">
+                        <span>방 이름</span>
+                        <span>플레이어</span>
+                    </div>
+                    <div id="room-list" class="room-list">
+                        <!-- 방 목록이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+                <button id="refresh-rooms-btn"><i class="fas fa-sync-alt"></i> 새로고침</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="game-container" class="container hidden">
+        <header>
+            <h1><i class="fas fa-chess"></i> 체스 게임</h1>
+            <div id="room-info">방: <span id="room-name-display"></span></div>
+        </header>
+        
+        <div class="game-status">
+            <div id="player-info" class="player-info">
+                <div class="player white">
+                    <div class="player-color white-indicator"></div>
+                    <div class="player-name">흰색</div>
+                    <div id="white-status" class="player-status">대기 중</div>
+                </div>
+                <div class="vs">VS</div>
+                <div class="player black">
+                    <div class="player-color black-indicator"></div>
+                    <div class="player-name">검은색</div>
+                    <div id="black-status" class="player-status">대기 중</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="my-status" class="my-status">대기 중</div>
+        
+        <div class="game-info">
+            <div id="status">게임을 시작하려면 두 플레이어가 모두 준비해야 합니다</div>
+            <div class="controls">
+                <button id="ready-btn"><i class="fas fa-check"></i> 준비</button>
+                <button id="reset-btn" disabled><i class="fas fa-redo"></i> 게임 재시작</button>
+                <button id="leave-btn"><i class="fas fa-sign-out-alt"></i> 방 나가기</button>
+            </div>
+        </div>
+        
+        <main class="game-area">
+            <div class="game-container">
+                <div id="board" class="board"></div>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h3><i class="fas fa-comments"></i> 채팅</h3>
+                </div>
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="메시지 입력...">
+                    <button id="send-message-btn"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>모든 체스 규칙 구현 &copy; <span id="year"></span></p>
+        </footer>
+    </div>
+    
+    <div id="notification" class="notification hidden"></div>
+    
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+    <script src="multi-client.js"></script>
+</body>
+</html> 
